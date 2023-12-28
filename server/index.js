@@ -56,7 +56,7 @@ app.get('/list', (req, res) => {
             return;
         }
         console.log('Klasördeki Dosyalar:', files);
-        res.send(files);
+        res.json(files);
     });
     
 });

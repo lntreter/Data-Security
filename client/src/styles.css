@@ -4,3 +4,8 @@ body {
   font-family: 'Poppins', sans-serif;
   background-color: #f5f5f5;
 }
+
+.filesBox {
+  @apply flex mx-auto space-x-8 justify-center items-center;
+  background-color: lightblue;
+}

@@ -3,12 +3,15 @@ const multer = require('multer');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const cors = require('cors');
 
 const app = express();
+app.use(cors());
 const upload = multer({ dest: 'uploads/' }); // Dosyaları 'uploads' klasörüne kaydet
 const encryptionAlgorithm = 'aes-256-cbc';
 const secretKey = 'your-secret-key'; // Güçlü bir anahtarla değiştirilmelidir
 const iv = crypto.randomBytes(16); // Initialization vector
+const encryptedFolderPath = 'encrypted';
 
 // Dosya şifreleme fonksiyonu
 function encryptFile(buffer) {
@@ -44,6 +47,21 @@ app.get('/download/:filename', (req, res) => {
     res.write(decryptedData);
     res.end();
 });
+
+// klasörleri listelemek için get endpoint'i
+app.get('/list', (req, res) => {
+    fs.readdir(encryptedFolderPath, (err, files) => {
+        if (err) {
+            console.error('Dosya Listeleme Hatası:', err);
+            return;
+        }
+        console.log('Klasördeki Dosyalar:', files);
+        res.send(files);
+    });
+    
+});
+
+
 
 app.listen(3000, () => {
     console.log('Sunucu 3000 portunda başlatıldı.');

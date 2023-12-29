@@ -4,6 +4,9 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
+const util = require('util');
+const readdir = util.promisify(fs.readdir);
+const stat = util.promisify(fs.stat);
 
 const app = express();
 app.use(cors());
@@ -12,6 +15,7 @@ const encryptionAlgorithm = 'aes-256-cbc';
 const secretKey = 'your-secret-key'; // Güçlü bir anahtarla değiştirilmelidir
 const iv = crypto.randomBytes(16); // Initialization vector
 const encryptedFolderPath = 'encrypted';
+const uploadsFolderPath = 'uploads';
 
 // Dosya şifreleme fonksiyonu
 function encryptFile(buffer) {
@@ -49,18 +53,43 @@ app.get('/download/:filename', (req, res) => {
 });
 
 // klasörleri listelemek için get endpoint'i
-app.get('/list', (req, res) => {
-    fs.readdir(encryptedFolderPath, (err, files) => {
-        if (err) {
-            console.error('Dosya Listeleme Hatası:', err);
-            return;
-        }
-        console.log('Klasördeki Dosyalar:', files);
-        res.json(files);
-    });
-    
-});
+app.get('/list', async (req, res) => {
+    try {
+        let Files;
+        const encryptedFiles = await readdir(encryptedFolderPath);
+        console.log(encryptedFiles);
 
+        const uploadFiles = await readdir(uploadsFolderPath);
+        
+        const encryptedFilesSizes = await Promise.all(
+            encryptedFiles.map(file => stat(path.join(encryptedFolderPath, file)).then(stats => stats.size))
+        );
+        const uploadFilesSizes = await Promise.all(
+            uploadFiles.map(file => stat(path.join(uploadsFolderPath, file)).then(stats => stats.size))
+        );
+
+        Files = {
+            names : {
+                encryptedFiles,
+                uploadFiles
+            },
+            size: {
+                encryptedFilesSize: encryptedFilesSizes,
+                uploadFilesSize: uploadFilesSizes
+            },
+            extension: {
+                encryptedFilesExtension: encryptedFiles.map(file => path.extname(file)),
+                uploadFilesExtension: uploadFiles.map(file => path.extname(file))
+            }
+        }
+
+        res.json(Files);
+        
+        console.log('Klasördeki Dosyalar:', typeof(Files), Files);
+    } catch (err) {
+        console.error('Dosya Listeleme Hatası:', err);
+    }
+});
 
 
 app.listen(3000, () => {

@@ -9,3 +9,7 @@ body {
   @apply flex mx-auto space-x-8 justify-center items-center;
   background-color: lightblue;
 }
+
+.sagaKaydir {
+  margin-left: auto;
+}

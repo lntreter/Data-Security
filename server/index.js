@@ -10,6 +10,7 @@ const stat = util.promisify(fs.stat);
 
 const app = express();
 app.use(cors());
+app.use(express.json({ limit: '50mb' }));
 const upload = multer({ dest: 'uploads/' }); // Dosyaları 'uploads' klasörüne kaydet
 const encryptionAlgorithm = 'aes-256-cbc';
 const secretKey = 'your-secret-key'; // Güçlü bir anahtarla değiştirilmelidir
@@ -32,14 +33,22 @@ function decryptFile(encrypted) {
 }
 
 // Dosya yükleme ve şifreleme endpoint'i
-app.post('/upload', upload.single('file'), (req, res) => {
-    const fileBuffer = fs.readFileSync(req.file.path);
-    const encrypted = encryptFile(fileBuffer);
+app.post('/upload', (req, res) => {
 
-    const encryptedFilePath = path.join('encrypted', `${req.file.filename}.enc`);
-    fs.writeFileSync(encryptedFilePath, JSON.stringify(encrypted));
+    const base64Data = req.body.byteArray;
+    console.log('base64Data: ', base64Data);
+    const buffer = Buffer.from(base64Data, 'base64');
 
-    res.send(`Dosya şifrelendi ve kaydedildi: ${encryptedFilePath}`);
+    const filePath = path.join(__dirname, 'uploads', 'encrypted.txt');
+
+    fs.writeFile(filePath, buffer, (err) => {
+        if (err) {
+            res.status(500).send('Dosya yazılırken bir hata oluştu.');
+            return;
+        }
+        res.send(`Dosya başarıyla kaydedildi: ${filePath}`);
+    });
+    
 });
 
 // Dosya indirme ve deşifreleme endpoint'i

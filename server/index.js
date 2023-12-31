@@ -37,9 +37,10 @@ app.post('/upload', (req, res) => {
 
     const base64Data = req.body.byteArray;
     console.log('base64Data: ', base64Data);
+    console.log('fileName: ', req.body.fileName);
     const buffer = Buffer.from(base64Data, 'base64');
 
-    const filePath = path.join(__dirname, 'uploads', 'encrypted.txt');
+    const filePath = path.join(__dirname, 'uploads', "encrypted_"+req.body.fileName);
 
     fs.writeFile(filePath, buffer, (err) => {
         if (err) {
@@ -50,6 +51,32 @@ app.post('/upload', (req, res) => {
     });
     
 });
+
+
+// Klasör olusturma endpoint'i
+app.post('/create', (req, res) => {
+    const folderName = req.body.folderName;
+    const folderPath = path.join(__dirname, 'uploads', folderName);
+    fs.mkdir(folderPath, (err) => {
+        if (err) {
+            res.status(500).send('Klasör oluşturulurken bir hata oluştu.');
+            return;
+        }
+        res.send(`Klasör başarıyla oluşturuldu: ${folderPath}`);
+    });
+});
+
+// Klasör olustururken klasor bilşgisi alma endpoint'i
+app.get('/create', async (req, res) => {
+    try {
+        const folderPath = path.join(__dirname, 'uploads');
+        const folderNames = await readdir(folderPath);
+        res.json(folderNames);
+    } catch (err) {
+        console.error('Klasör Listeleme Hatası:', err);
+    }
+});
+
 
 // Dosya indirme ve deşifreleme endpoint'i
 app.get('/download/:filename', (req, res) => {

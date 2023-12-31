@@ -1,18 +1,21 @@
 ---
 import Files from '../components/Files.tsx'
+import Drawer from '../components/Drawer';
 import '../styles.css'
 ---
 
 <html lang="en">
 	<head>
+		<link rel="stylesheet" href="https://unpkg.com/flowbite@{{< current_version >}}/dist/flowbite.min.css" />
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		<title>Astro</title>
 	</head>
-	<body>
+	<body >
 		<h1>Astro</h1>
+		<Drawer client:load/>
 		<Files client:load />
 	</body>
 </html>

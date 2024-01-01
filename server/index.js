@@ -52,7 +52,6 @@ app.post('/upload', (req, res) => {
     
 });
 
-
 // Klasör olusturma endpoint'i
 app.post('/create', (req, res) => {
     const folderName = req.body.folderName;
@@ -66,17 +65,16 @@ app.post('/create', (req, res) => {
     });
 });
 
-// Klasör olustururken klasor bilşgisi alma endpoint'i
+// Directory listing endpoint'i
 app.get('/create', async (req, res) => {
     try {
-        const folderPath = path.join(__dirname, 'uploads');
-        const folderNames = await readdir(folderPath);
-        res.json(folderNames);
+        const files = await readdir(".");
+        res.json(files);
+        console.log('Klasördeki Dosyalar:', files);
     } catch (err) {
-        console.error('Klasör Listeleme Hatası:', err);
+        console.error('Dosya Listeleme Hatası:', err);
     }
 });
-
 
 // Dosya indirme ve deşifreleme endpoint'i
 app.get('/download/:filename', (req, res) => {
@@ -88,42 +86,85 @@ app.get('/download/:filename', (req, res) => {
     res.end();
 });
 
-// klasörleri listelemek için get endpoint'i
-app.get('/list', async (req, res) => {
-    try {
-        let Files;
-        const encryptedFiles = await readdir(encryptedFolderPath);
-        console.log(encryptedFiles);
-
-        const uploadFiles = await readdir(uploadsFolderPath);
-        
-        const encryptedFilesSizes = await Promise.all(
-            encryptedFiles.map(file => stat(path.join(encryptedFolderPath, file)).then(stats => stats.size))
-        );
-        const uploadFilesSizes = await Promise.all(
-            uploadFiles.map(file => stat(path.join(uploadsFolderPath, file)).then(stats => stats.size))
-        );
-
-        Files = {
-            names : {
-                encryptedFiles,
-                uploadFiles
-            },
-            size: {
-                encryptedFilesSize: encryptedFilesSizes,
-                uploadFilesSize: uploadFilesSizes
-            },
-            extension: {
-                encryptedFilesExtension: encryptedFiles.map(file => path.extname(file)),
-                uploadFilesExtension: uploadFiles.map(file => path.extname(file))
-            }
+const getFiles = (dir, parentPath = '') => {
+    let results = [];
+    fs.readdirSync(dir).forEach(file => {
+        // node_modules klasörünü atla
+        if (file === 'node_modules') {
+            return;
         }
 
-        res.json(Files);
+        const filePath = path.join(dir, file);
+        const stats = fs.statSync(filePath);
+
+        // Eğer bir klasörse, içindeki dosyaları da tarar
+        if (stats.isDirectory()) {
+            results = results.concat(getFiles(filePath, path.join(parentPath, file)));
+        } else {
+            results.push({
+                name: file,
+                path: path.join(parentPath, file), // Dosyanın yolu, üst dizinlerle birleştirilmiş
+                extension: path.extname(file),
+                size: stats.size,
+                isDirectory: stats.isDirectory(),
+                modifiedDate: stats.mtime
+            });
+        }
+    });
+    return results;
+};
+
+// klasörleri listelemek için get endpoint'i
+// app.get('/list', async (req, res) => {
+//     try {
+//         let Files;
+//         const encryptedFiles = await readdir(encryptedFolderPath);
+//         console.log(encryptedFiles);
+
+//         const uploadFiles = await readdir(uploadsFolderPath);
         
-        console.log('Klasördeki Dosyalar:', typeof(Files), Files);
-    } catch (err) {
-        console.error('Dosya Listeleme Hatası:', err);
+//         const encryptedFilesSizes = await Promise.all(
+//             encryptedFiles.map(file => stat(path.join(encryptedFolderPath, file)).then(stats => stats.size))
+//         );
+//         const uploadFilesSizes = await Promise.all(
+//             uploadFiles.map(file => stat(path.join(uploadsFolderPath, file)).then(stats => stats.size))
+//         );
+
+//         Files = {
+//             dir: {
+//                 encryptedFolderPath,
+//                 uploadsFolderPath
+//             },
+//             names : {
+//                 encryptedFiles,
+//                 uploadFiles
+//             },
+//             size: {
+//                 encryptedFilesSize: encryptedFilesSizes,
+//                 uploadFilesSize: uploadFilesSizes
+//             },
+//             extension: {
+//                 encryptedFilesExtension: encryptedFiles.map(file => path.extname(file)),
+//                 uploadFilesExtension: uploadFiles.map(file => path.extname(file))
+//             }
+//         }
+
+//         res.json(Files);
+        
+//         console.log('Klasördeki Dosyalar:', typeof(Files), Files);
+//     } catch (err) {
+//         console.error('Dosya Listeleme Hatası:', err);
+//     }
+// });
+
+app.get('/list', (req, res) => {
+    const dir = './'; // Örnek olarak mevcut dizini kullanıyoruz
+    try {
+        const files = getFiles(dir);
+        res.json(files);
+        console.log('Klasördeki Dosyalar:', files);
+    } catch (error) {
+        res.status(500).send('Dosya bilgileri alınamadı');
     }
 });
 

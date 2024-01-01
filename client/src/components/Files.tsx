@@ -3,6 +3,8 @@ import axios from 'axios';
 import CryptoJS from 'crypto-js';
 import { IoAddOutline } from "react-icons/io5";
 import { Modal } from 'flowbite';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 // localhost:3000/list adresine get request atıp, dönen sonucu ekrana yazdırır.
@@ -24,6 +26,8 @@ const Files = () => {
     const [folderContent, setFolderContent] = useState('');
 
     const [selectedOption, setSelectedOption] = useState('');
+
+    const notify = () => toast("Dosya başarıyla yüklendi!");
 
     useEffect(() => {
         console.log(selectedOption);
@@ -107,7 +111,9 @@ const Files = () => {
 
                 })
                 .then(response => console.log(response.data))
-                .catch(error => console.error(error));
+                .catch(error => console.error(error)).then(() => {
+                    notify();
+                });
             }
             else if (selectedOption == 'AES') {
                 const encrypted = CryptoJS.AES.encrypt(uint8Array.toString(), '12345678');
@@ -138,35 +144,34 @@ const Files = () => {
         <div className=" relative md:px-32 py-8 min-h-screen w-full">
 
             <div id="modal"
-                className=" fixed top-0 left-0 min-w-screen h-screen flex items-center justify-center bg-gray-500 bg-opacity-50 transform scale-0 transition-transform duration-300">
+                className=" fixed top-0 left-0 min-w-screen h-screen w-screen flex items-center justify-center bg-gray-500 bg-opacity-50 transform scale-0 transition-transform duration-300">
                 
                 <div className="rounded-xl bg-gradient-to-bl from-blue-50 to-violet-50 flex items-center justify-center">
                     <div className=" container mx-auto p-4">
                         
-                        
-                        <div className=" relative flex w-96 flex-col rounded-md bg-white bg-clip-border text-gray-700 shadow-md">
+                        <div className="flex flex-col w-96 rounded-md bg-white bg-clip-border text-gray-700 shadow-md">
                             
-                            <button onClick={CloseModalClick} > 
-                                <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-                                </svg>
-                            </button>
+                            <div className="mt-3 ml-3">
+                                <button onClick={CloseModalClick} className='mr-3 rounded-full hover:bg-purple-200'>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 14 14" id="cross"><path fill="#000" fill-rule="evenodd" d="M13 7C13 10.3137 10.3137 13 7 13C3.68629 13 1 10.3137 1 7C1 3.68629 3.68629 1 7 1C10.3137 1 13 3.68629 13 7ZM9.26274 4.73725C9.53611 5.01062 9.53611 5.45384 9.26274 5.7272L7.98995 7L9.26274 8.27279C9.53611 8.54615 9.53611 8.98937 9.26274 9.26274C8.98937 9.5361 8.54616 9.5361 8.27279 9.26274L7 7.98994L5.72721 9.26274C5.45384 9.5361 5.01063 9.5361 4.73726 9.26274C4.46389 8.98937 4.46389 8.54615 4.73726 8.27279L6.01005 7L4.73726 5.7272C4.46389 5.45384 4.46389 5.01062 4.73726 4.73725C5.01063 4.46389 5.45384 4.46389 5.72721 4.73725L7 6.01005L8.27279 4.73725C8.54616 4.46389 8.98937 4.46389 9.26274 4.73725Z" clip-rule="evenodd"></path></svg>
+                                </button>
+                            </div>
 
-                                <select value={selectedOption} onChange={handleSelectChange} id="encrypt" className=" ml-auto bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                            <div className="flex flex-col justify-center mt-4">
+                                
+                                <select value={selectedOption} onChange={handleSelectChange} id="encrypt" className="mr-4 ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
                                     <option selected>Bir şifreleme algoritması seçin</option>
                                     <option id='opt1' value="RSA">RSA</option>
                                     <option id='opt2' value="DES">DES</option>
                                     <option id='opt3' value="AES">AES</option>
                                     <option id='opt4' value="Blowfish">Blowfish</option>
                                 </select>
-                                    
-                                <input type="text" id="first_name" className="mt-2 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Anahtar Değeri" required/>
-                                <input id='file_input' onChange={handleFileRead} className=" ml-auto mt-2 block text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" type="file"/>
+                                        
+                                <input type="text" id="first_name" className="mt-3 mr-4 ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Anahtar Değeri" required/>
+                                <input id='file_input' onChange={handleFileRead} className=" mr-4 ml-4 mt-3 mb-4 block text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" type="file"/>
 
-                            
+                            </div> 
                         </div>
-                        
-                        
                     </div>
                 </div>
             </div>
@@ -350,6 +355,7 @@ const Files = () => {
 
             <script type="module" src="https://unpkg.com/@material-tailwind/html@latest/scripts/popover.js"></script>
             <script src="https://unpkg.com/flowbite@1.4.0/dist/flowbite.js"></script>
+            <ToastContainer />
         </div>
     
     );

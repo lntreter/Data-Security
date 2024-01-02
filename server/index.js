@@ -78,12 +78,13 @@ app.get('/create', async (req, res) => {
 
 // Dosya indirme ve deşifreleme endpoint'i
 app.get('/download/:filename', (req, res) => {
-    const encryptedFilePath = path.join('encrypted', `${req.params.filename}.enc`);
+    const encryptedFilePath = path.join('uploads', `${req.params.filename}`);
     const encryptedData = JSON.parse(fs.readFileSync(encryptedFilePath, 'utf8'));
     const decryptedData = decryptFile(encryptedData);
 
     res.write(decryptedData);
     res.end();
+    res.send(`Dosya başarıyla indirildi `);
 });
 
 const getFiles = (dir, parentPath = '') => {
@@ -113,49 +114,6 @@ const getFiles = (dir, parentPath = '') => {
     });
     return results;
 };
-
-// klasörleri listelemek için get endpoint'i
-// app.get('/list', async (req, res) => {
-//     try {
-//         let Files;
-//         const encryptedFiles = await readdir(encryptedFolderPath);
-//         console.log(encryptedFiles);
-
-//         const uploadFiles = await readdir(uploadsFolderPath);
-        
-//         const encryptedFilesSizes = await Promise.all(
-//             encryptedFiles.map(file => stat(path.join(encryptedFolderPath, file)).then(stats => stats.size))
-//         );
-//         const uploadFilesSizes = await Promise.all(
-//             uploadFiles.map(file => stat(path.join(uploadsFolderPath, file)).then(stats => stats.size))
-//         );
-
-//         Files = {
-//             dir: {
-//                 encryptedFolderPath,
-//                 uploadsFolderPath
-//             },
-//             names : {
-//                 encryptedFiles,
-//                 uploadFiles
-//             },
-//             size: {
-//                 encryptedFilesSize: encryptedFilesSizes,
-//                 uploadFilesSize: uploadFilesSizes
-//             },
-//             extension: {
-//                 encryptedFilesExtension: encryptedFiles.map(file => path.extname(file)),
-//                 uploadFilesExtension: uploadFiles.map(file => path.extname(file))
-//             }
-//         }
-
-//         res.json(Files);
-        
-//         console.log('Klasördeki Dosyalar:', typeof(Files), Files);
-//     } catch (err) {
-//         console.error('Dosya Listeleme Hatası:', err);
-//     }
-// });
 
 app.get('/list', (req, res) => {
     const dir = './'; // Örnek olarak mevcut dizini kullanıyoruz

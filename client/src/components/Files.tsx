@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import CryptoJS from 'crypto-js';
-import { IoAddOutline } from "react-icons/io5";
-import { Modal } from 'flowbite';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Dragdrop from './Dragdrop';
 
+
+const dsa = 5;
 
 // localhost:3000/list adresine get request atıp, dönen sonucu ekrana yazdırır.
 
@@ -80,14 +81,26 @@ const Files = () => {
         document.getElementById("getData").innerHTML = "⟳ Dosyaları Yenile";
     }
 
+    // listedeki dosyalardan birinin indirme butonuna tıklandığında çalışır
+    const downloadFile = async (fileName) => {
+        const response = await fetch('http://localhost:3000/download/' + fileName);
+        const data = await response.text();
+        console.log(data);
+    }
+
 
     const handleFileRead = async (event) => {
+
+        //anahtar değeri alınacak
+        var key = (document.getElementById("first_name") as HTMLInputElement).value;
         const file = event.target.files?.[0];
         if (!file) {
+            console.log("Dosya seçilmedi");
             return;
         }
 
         const fileName = file.name;
+
 
         const reader = new FileReader();
         reader.onload = async (e) => {
@@ -100,7 +113,7 @@ const Files = () => {
 
                 const base64Data = uint8ArrayToBase64(uint8Array);
 
-                const encrypted = CryptoJS.DES.encrypt(base64Data, '12345678');
+                const encrypted = CryptoJS.DES.encrypt(base64Data, key);
 
                 setFileContent(encrypted.toString());
 
@@ -114,18 +127,20 @@ const Files = () => {
                 .then(response => console.log(response.data))
                 .catch(error => console.error(error)).then(() => {
                     notify();
+                }).then(() => {
+                    key = '';
                 });
             }
             else if (selectedOption == 'AES') {
-                const encrypted = CryptoJS.AES.encrypt(uint8Array.toString(), '12345678');
+                const encrypted = CryptoJS.AES.encrypt(uint8Array.toString(), key);
                 setFileContent(encrypted.toString());
             }
             else if (selectedOption == 'Blowfish') {
-                const encrypted = CryptoJS.Blowfish.encrypt(uint8Array.toString(), '12345678');
+                const encrypted = CryptoJS.Blowfish.encrypt(uint8Array.toString(), key);
                 setFileContent(encrypted.toString());
             }
             else if (selectedOption == 'RSA') {
-                const encrypted = CryptoJS.AES.encrypt(uint8Array.toString(), '12345678');
+                const encrypted = CryptoJS.AES.encrypt(uint8Array.toString(), key);
                 setFileContent(encrypted.toString());
             }
             else {
@@ -161,7 +176,8 @@ const Files = () => {
                             <div className="flex flex-col justify-center mt-4">
                                 
                                 <select value={selectedOption} onChange={handleSelectChange} id="encrypt" className="mr-4 ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                    <option selected>Bir şifreleme algoritması seçin</option>
+                                    
+                                    <option value="">Şifreleme Algoritması Seçiniz</option>
                                     <option id='opt1' value="RSA">RSA</option>
                                     <option id='opt2' value="DES">DES</option>
                                     <option id='opt3' value="AES">AES</option>
@@ -169,8 +185,7 @@ const Files = () => {
                                 </select>
                                         
                                 <input type="text" id="first_name" className="mt-3 mr-4 ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Anahtar Değeri" required/>
-                                <input id='file_input' onChange={handleFileRead} className=" mr-4 ml-4 mt-3 mb-4 block text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" type="file"/>
-
+                                <Dragdrop handleFileRead={handleFileRead}/>
                             </div> 
                         </div>
                     </div>
@@ -182,7 +197,7 @@ const Files = () => {
 
 
             <div className="">
-                <div className=" max-w-2xl my-10">
+                <div className=" max-w-4xl my-10">
                     <div className="bg-white shadow-lg rounded-lg overflow-hidden">
                         <ul className="divide-y divide-gray-200">
                             <li className="p-3 flex justify-between items-center user-card"> <h1><b>DOSYALAR</b> - Sunucu dizini</h1>
@@ -308,6 +323,8 @@ const Files = () => {
                                                             <img className="w-10 h-10 rounded-full" src="https://img.icons8.com/color/48/000000/swift.png" alt="Christy"/>
                                                         ) : fileExt == '.t' ? (
                                                             <img className="w-10 h-10 rounded-full" src="https://img.icons8.com/color/48/000000/perl.png" alt="Christy"/>
+                                                        ) : fileExt == '.svg' ? (
+                                                            <img className="w-10 h-10 rounded-full" src="https://img.icons8.com/color/48/000000/svg.png" alt="Christy"/>
                                                         ) : fileExt
                                                         
                                                     }
@@ -325,7 +342,9 @@ const Files = () => {
                                                             ''
                                                         ) : fileSize + " byte"
                                                     }</span>
-                                                    <button className='mr-3 rounded-full hover:bg-purple-200'
+                                                    <button 
+                                                        onClick={() => downloadFile(file.name)}
+                                                        className='mr-3 rounded-full hover:bg-purple-200'
                                                         ><svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                                                         <path d="M14.707 7.793a1 1 0 0 0-1.414 0L11 10.086V1.5a1 1 0 0 0-2 0v8.586L6.707 7.793a1 1 0 1 0-1.414 1.414l4 4a1 1 0 0 0 1.416 0l4-4a1 1 0 0 0-.002-1.414Z"/>
                                                         <path d="M18 12h-2.55l-2.975 2.975a3.5 3.5 0 0 1-4.95 0L4.55 12H2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2Zm-3 5a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/>

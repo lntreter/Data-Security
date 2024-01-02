@@ -28,6 +28,7 @@ const Files = () => {
     const [selectedOption, setSelectedOption] = useState('');
 
     const notify = () => toast("Dosya başarıyla yüklendi!");
+    const warning = () => toast.warn("Lütfen bir şifreleme algoritması seçiniz.");
 
     useEffect(() => {
         console.log(selectedOption);
@@ -128,7 +129,7 @@ const Files = () => {
                 setFileContent(encrypted.toString());
             }
             else {
-                alert("Lütfen bir şifreleme algoritması seçiniz.");
+                warning();
             }
                 
         };
@@ -249,7 +250,7 @@ const Files = () => {
                                         const fileDir = file.path;
 
                                         return (
-                                            <li className="p-3 flex justify-between items-center user-card">
+                                            <li className="p-3 flex justify-between items-center user-card trans fade-in">
                                                 <div className="flex items-center">
                                                     {
                                                         //dosya uzantısına göre icon ekleme

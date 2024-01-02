@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const crypto = require('crypto');
+const CryptoJS = require("crypto-js");
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
@@ -11,43 +12,52 @@ const stat = util.promisify(fs.stat);
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-const upload = multer({ dest: 'uploads/' }); // Dosyaları 'uploads' klasörüne kaydet
-const encryptionAlgorithm = 'aes-256-cbc';
-const secretKey = 'your-secret-key'; // Güçlü bir anahtarla değiştirilmelidir
-const iv = crypto.randomBytes(16); // Initialization vector
-const encryptedFolderPath = 'encrypted';
-const uploadsFolderPath = 'uploads';
-
-// Dosya şifreleme fonksiyonu
-function encryptFile(buffer) {
-    const cipher = crypto.createCipheriv(encryptionAlgorithm, secretKey, iv);
-    const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
-    return { iv: iv.toString('hex'), content: encrypted.toString('hex') };
-}
-
-// Dosya deşifreleme fonksiyonu
-function decryptFile(encrypted) {
-    const decipher = crypto.createDecipheriv(encryptionAlgorithm, secretKey, Buffer.from(encrypted.iv, 'hex'));
-    const decrypted = Buffer.concat([decipher.update(Buffer.from(encrypted.content, 'hex')), decipher.final()]);
-    return decrypted;
-}
+//rc4 için şifreleme anahtarını oluştur crtpyo-js ile
+const secretKey = crypto.randomBytes(16).toString('hex');
 
 // Dosya yükleme ve şifreleme endpoint'i
 app.post('/upload', (req, res) => {
 
+
     const base64Data = req.body.byteArray;
     console.log('base64Data: ', base64Data);
     console.log('fileName: ', req.body.fileName);
-    const buffer = Buffer.from(base64Data, 'base64');
+    const buffer = Buffer.from(base64Data, 'base64'); //
 
     const filePath = path.join(__dirname, 'uploads', "encrypted_"+req.body.fileName);
+    const fileNamewithoutExtension = req.body.fileName.split('.')[0];
 
-    fs.writeFile(filePath, buffer, (err) => {
-        if (err) {
-            res.status(500).send('Dosya yazılırken bir hata oluştu.');
-            return;
-        }
-        res.send(`Dosya başarıyla kaydedildi: ${filePath}`);
+    // Dosya ile birlikte gönderilen şifreleme anahtarını RC4 ile şifrele ve encrypted klasörüne anahtar algoritması ile kaydet
+
+    console.log('key: ', req.body.key);
+    console.log('secretKey: ', secretKey);
+
+    const cipherText = CryptoJS.RC4.encrypt(req.body.key, secretKey).toString();
+    const encryptedKeyFilePath = path.join(__dirname, 'encryptkeys', req.body.algorithm+"-encrypted_"+fileNamewithoutExtension+".txt");
+
+    Promise.all([
+        new Promise((resolve, reject) => {
+            fs.writeFile(encryptedKeyFilePath, cipherText, (err) => {
+                if (err) {
+                    reject('Dosya yazılırken bir hata oluştu.');
+                } else {
+                    resolve(`Dosya başarıyla kaydedildi: ${encryptedKeyFilePath}`);
+                }
+            });
+        }),
+        new Promise((resolve, reject) => {
+            fs.writeFile(filePath, buffer, (err) => {
+                if (err) {
+                    reject('Dosya yazılırken bir hata oluştu.');
+                } else {
+                    resolve(`Dosya başarıyla kaydedildi: ${filePath}`);
+                }
+            });
+        })
+    ]).then((results) => {
+        res.send(results);
+    }).catch((error) => {
+        res.status(500).send(error);
     });
     
 });
@@ -76,15 +86,89 @@ app.get('/create', async (req, res) => {
     }
 });
 
+function findFileInDirectory(dir, partialFileName) {
+
+    console.log("partialFileName: ", partialFileName);
+
+    if (!dir || typeof dir !== 'string') {
+        // Geçersiz dizin yolu
+        return null;
+    }
+
+    let files;
+    try {
+        files = fs.readdirSync(dir);
+    } catch (error) {
+        console.error('Dizin okunurken hata oluştu:', error);
+        return null;
+    }
+
+    for (const file of files) {
+        // dosya adı node_modules ile başlıyorsa atla
+        if (file.startsWith('node_modules')) {
+            continue;
+        }
+        const fullPath = path.join(dir, file);
+        console.log('fullPath: ', fullPath);
+        let stat;
+        try {
+            stat = fs.statSync(fullPath);
+        } catch (error) {
+            console.error('Dosya durumu okunurken hata oluştu:', error);
+            continue; // Bir sonraki dosyaya geç
+        }
+
+        if (stat.isDirectory()) {
+            const result = findFileInDirectory(fullPath, partialFileName);
+            if (result) return result;
+        } else if (fullPath.includes(partialFileName)) {
+            console.log('DOSYA BULUNDU: ', fullPath);
+            return fullPath;
+        }
+    }
+
+    return null;
+}
+
+
 // Dosya indirme ve deşifreleme endpoint'i
 app.get('/download/:filename', (req, res) => {
-    const encryptedFilePath = path.join('uploads', `${req.params.filename}`);
-    const encryptedData = JSON.parse(fs.readFileSync(encryptedFilePath, 'utf8'));
-    const decryptedData = decryptFile(encryptedData);
+    //istenilen dosyanın adına göre hangi dizinde olduğunu bul
+    const dir = './';
+    const fileName = req.params.filename;
+    const filePath = findFileInDirectory(dir, fileName);
+    console.log('*****************************************' + filePath);
+    const realFileName = path.basename(filePath);
 
-    res.write(decryptedData);
-    res.end();
-    res.send(`Dosya başarıyla indirildi `);
+    const encryptedKeyFilePath = findFileInDirectory(dir, fileName.split('.')[0]+".txt");
+    const realEFilename = path.basename(encryptedKeyFilePath);
+
+    const algorithm = realEFilename.split('-')[0];
+
+    // Dosyayı oku
+    fs.readFile(filePath, (err, data) => {
+        if (err) {
+            res.status(500).send('Dosya okunurken bir hata oluştu.');
+            return;
+        }
+
+        // Dosyayı rc4 ile şifrelenmiş anahtar ile deşifrele
+        
+        const encryptedKey = fs.readFileSync(encryptedKeyFilePath);
+        const decryptedKey = CryptoJS.RC4.decrypt(encryptedKey, secretKey).toString(CryptoJS.enc.Utf8);
+
+        // Okuduğumuz dosyayı istemciye gönder
+        const File = {
+            name: fileName,
+            data: data,
+            key: decryptedKey,
+            algorithm: algorithm
+        };
+        
+        res.json(File);
+
+    });
+
 });
 
 const getFiles = (dir, parentPath = '') => {

@@ -18,9 +18,19 @@ interface FileData {
     size: number
     isDirectory: boolean
     modifiedDate: any
-  }
+}
+
+interface DFileData {
+    map(arg0: (name: any, index: any) => import("react/jsx-runtime").JSX.Element): unknown;
+    name: string
+    data: Buffer
+    key: string
+    algorithm: string
+}
 
 const Files = () => {
+
+    const [dfile, setDfile] = useState<DFileData | null> (null as any);
     
     const [data, setData] = useState<FileData | null> (null as any);
     const [fileContent, setFileContent] = useState('');
@@ -77,15 +87,41 @@ const Files = () => {
         const data = await response.text();
         setData(JSON.parse(data));
         console.log(data);
-
-        document.getElementById("getData").innerHTML = "⟳ Dosyaları Yenile";
     }
 
     // listedeki dosyalardan birinin indirme butonuna tıklandığında çalışır
-    const downloadFile = async (fileName) => {
+    const downloadFile = async (fileName, filePath) => {
         const response = await fetch('http://localhost:3000/download/' + fileName);
         const data = await response.text();
-        console.log(data);
+        setDfile(JSON.parse(data));
+        console.log("RESPONSE: "+data);
+
+        useEffect(() => {
+            console.log(dfile);
+        } ), [dfile];
+
+        // dosya indirme işlemi yapılacak
+        // dosya indirilmeden önce algorimasına göre deşifreleme yapılacak
+        // anahtar değeri alınacak
+
+
+
+        var key = dfile.key;
+        const fileData = dfile.data;
+
+        if (key == '') {
+            key = '12345678';
+        }
+
+        var algorithm = dfile.algorithm;
+
+        if (algorithm == 'DES') {
+
+            const decrypted = CryptoJS.DES.decrypt(fileData, key);
+            
+        }
+
+
     }
 
 
@@ -93,6 +129,13 @@ const Files = () => {
 
         //anahtar değeri alınacak
         var key = (document.getElementById("first_name") as HTMLInputElement).value;
+
+        if (key == '') {
+            key = '12345678';
+        }
+        
+
+        console.log("key: " + key);
         const file = event.target.files?.[0];
         if (!file) {
             console.log("Dosya seçilmedi");
@@ -121,7 +164,32 @@ const Files = () => {
 
                 axios.post('http://localhost:3000/upload', {
                     byteArray: encrypted.toString(),
-                    fileName: fileName
+                    fileName: fileName,
+                    key: key,
+                    algorithm: selectedOption
+
+                })
+                .then(response => console.log(response.data))
+                .catch(error => console.error(error)).then(() => {
+                    notify();
+                }).then(() => {
+                    key = '';
+                }).then(() => {
+
+                    document.getElementById("modal").classList.remove('scale-100')
+                })
+            }
+            else if (selectedOption == 'AES') {
+                const base64Data = uint8ArrayToBase64(uint8Array);
+                const encrypted = CryptoJS.AES.encrypt(base64Data, key);
+
+                setFileContent(encrypted.toString());
+
+                axios.post('http://localhost:3000/upload', {
+                    byteArray: encrypted.toString(),
+                    fileName: fileName,
+                    key: key,
+                    algorithm: selectedOption
 
                 })
                 .then(response => console.log(response.data))
@@ -130,14 +198,26 @@ const Files = () => {
                 }).then(() => {
                     key = '';
                 });
-            }
-            else if (selectedOption == 'AES') {
-                const encrypted = CryptoJS.AES.encrypt(uint8Array.toString(), key);
-                setFileContent(encrypted.toString());
+
             }
             else if (selectedOption == 'Blowfish') {
-                const encrypted = CryptoJS.Blowfish.encrypt(uint8Array.toString(), key);
+                const base64Data = uint8ArrayToBase64(uint8Array);
+                const encrypted = CryptoJS.Blowfish.encrypt(base64Data, key);
                 setFileContent(encrypted.toString());
+
+                axios.post('http://localhost:3000/upload', {
+                    byteArray: encrypted.toString(),
+                    fileName: fileName,
+                    key: key,
+                    algorithm: selectedOption
+
+                })
+                .then(response => console.log(response.data))
+                .catch(error => console.error(error)).then(() => {
+                    notify();
+                }).then(() => {
+                    key = '';
+                });
             }
             else if (selectedOption == 'RSA') {
                 const encrypted = CryptoJS.AES.encrypt(uint8Array.toString(), key);
@@ -342,24 +422,29 @@ const Files = () => {
                                                             ''
                                                         ) : fileSize + " byte"
                                                     }</span>
-                                                    <button 
-                                                        onClick={() => downloadFile(file.name)}
-                                                        className='mr-3 rounded-full hover:bg-purple-200'
-                                                        ><svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M14.707 7.793a1 1 0 0 0-1.414 0L11 10.086V1.5a1 1 0 0 0-2 0v8.586L6.707 7.793a1 1 0 1 0-1.414 1.414l4 4a1 1 0 0 0 1.416 0l4-4a1 1 0 0 0-.002-1.414Z"/>
-                                                        <path d="M18 12h-2.55l-2.975 2.975a3.5 3.5 0 0 1-4.95 0L4.55 12H2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2Zm-3 5a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/>
-                                                      </svg>
-                                                    </button>
-                                                    <button className='mr-3 rounded-full hover:bg-purple-200'>
-                                                        <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
-                                                            <path d="M17 4h-4V2a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2H1a1 1 0 0 0 0 2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1a1 1 0 1 0 0-2ZM7 2h4v2H7V2Zm1 14a1 1 0 1 1-2 0V8a1 1 0 0 1 2 0v8Zm4 0a1 1 0 0 1-2 0V8a1 1 0 0 1 2 0v8Z"/>
-                                                        </svg>
-                                                    </button>
-                                                    <button className='mr-3 rounded-full hover:bg-purple-200'>
-                                                        <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 3">
-                                                            <path d="M2 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm6.041 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM14 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"/>
-                                                        </svg>
-                                                    </button>
+                                                    {
+                                                        //eğer dosya adı dosya yoluyla aynı ise indirme butonları gösterme
+                                                        fileDir == file.name ? (
+                                                         <b className='mr-3'>SUNUCU DİZİNİ</b>
+                                                        ) : (
+                                                            <><button
+                                                                    onClick={() => downloadFile(file.name, file.path)}
+                                                                    className='mr-3 rounded-full hover:bg-purple-200'
+                                                                ><svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path d="M14.707 7.793a1 1 0 0 0-1.414 0L11 10.086V1.5a1 1 0 0 0-2 0v8.586L6.707 7.793a1 1 0 1 0-1.414 1.414l4 4a1 1 0 0 0 1.416 0l4-4a1 1 0 0 0-.002-1.414Z" />
+                                                                        <path d="M18 12h-2.55l-2.975 2.975a3.5 3.5 0 0 1-4.95 0L4.55 12H2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2Zm-3 5a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+                                                                    </svg>
+                                                                </button><button className='mr-3 rounded-full hover:bg-purple-200'>
+                                                                        <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
+                                                                            <path d="M17 4h-4V2a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2H1a1 1 0 0 0 0 2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1a1 1 0 1 0 0-2ZM7 2h4v2H7V2Zm1 14a1 1 0 1 1-2 0V8a1 1 0 0 1 2 0v8Zm4 0a1 1 0 0 1-2 0V8a1 1 0 0 1 2 0v8Z" />
+                                                                        </svg>
+                                                                    </button><button className='mr-3 rounded-full hover:bg-purple-200'>
+                                                                        <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 3">
+                                                                            <path d="M2 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm6.041 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM14 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z" />
+                                                                        </svg>
+                                                                    </button></>
+                                                        )
+                                                    }
                                                 </div>
                                             </li>
                                         );

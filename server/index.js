@@ -16,51 +16,7 @@ app.use(express.json({ limit: '50mb' }));
 const secretKey = crypto.randomBytes(16).toString('hex');
 
 // Dosya yükleme ve şifreleme endpoint'i
-app.post('/upload', (req, res) => {
 
-
-    const base64Data = req.body.byteArray;
-    console.log('base64Data: ', base64Data);
-    console.log('fileName: ', req.body.fileName);
-    const buffer = Buffer.from(base64Data, 'base64'); //
-
-    const filePath = path.join(__dirname, 'uploads', "encrypted_"+req.body.fileName);
-    const fileNamewithoutExtension = req.body.fileName.split('.')[0];
-
-    // Dosya ile birlikte gönderilen şifreleme anahtarını RC4 ile şifrele ve encrypted klasörüne anahtar algoritması ile kaydet
-
-    console.log('key: ', req.body.key);
-    console.log('secretKey: ', secretKey);
-
-    const cipherText = CryptoJS.RC4.encrypt(req.body.key, secretKey).toString();
-    const encryptedKeyFilePath = path.join(__dirname, 'encryptkeys', req.body.algorithm+"-encrypted_"+fileNamewithoutExtension+".txt");
-
-    Promise.all([
-        new Promise((resolve, reject) => {
-            fs.writeFile(encryptedKeyFilePath, cipherText, (err) => {
-                if (err) {
-                    reject('Dosya yazılırken bir hata oluştu.');
-                } else {
-                    resolve(`Dosya başarıyla kaydedildi: ${encryptedKeyFilePath}`);
-                }
-            });
-        }),
-        new Promise((resolve, reject) => {
-            fs.writeFile(filePath, buffer, (err) => {
-                if (err) {
-                    reject('Dosya yazılırken bir hata oluştu.');
-                } else {
-                    resolve(`Dosya başarıyla kaydedildi: ${filePath}`);
-                }
-            });
-        })
-    ]).then((results) => {
-        res.send(results);
-    }).catch((error) => {
-        res.status(500).send(error);
-    });
-    
-});
 
 // Klasör olusturma endpoint'i
 app.post('/create', (req, res) => {
@@ -130,6 +86,68 @@ function findFileInDirectory(dir, partialFileName) {
     return null;
 }
 
+app.post('/upload', (req, res) => {
+
+
+    const base64Data = req.body.byteArray;
+    console.log('base64Data: ', base64Data);
+    console.log('fileName: ', req.body.fileName);
+
+    // let utf8Encode = new TextEncoder();
+
+    
+    // let utf8Buffer = utf8Encode.encode(base64Data);
+    // console.log('utf8Encode: ', utf8Encode.encode(base64Data));
+    console.log('base64 : ', base64Data );
+
+
+    // eğer uploads klasörü yoksa oluştur
+    if (!fs.existsSync('./uploads')) {
+        fs.mkdirSync('./uploads');
+    }
+
+    const filePath = path.join(__dirname, 'uploads', "encrypted_"+req.body.fileName);
+    const fileNamewithoutExtension = req.body.fileName.split('.')[0];
+
+    // Dosya ile birlikte gönderilen şifreleme anahtarını RC4 ile şifrele ve encrypted klasörüne anahtar algoritması ile kaydet
+
+    console.log('key: ', req.body.key);
+    console.log('secretKey: ', secretKey);
+
+    if (!fs.existsSync('./encryptkeys')) {
+        fs.mkdirSync('./encryptkeys');
+    }
+
+    const cipherText = CryptoJS.RC4.encrypt(req.body.key, secretKey).toString();
+    const encryptedKeyFilePath = path.join(__dirname, 'encryptkeys', req.body.algorithm+"-encrypted_"+fileNamewithoutExtension+".enc");
+
+    Promise.all([
+        new Promise((resolve, reject) => {
+            fs.writeFileSync(encryptedKeyFilePath, cipherText, (err) => {
+                if (err) {
+                    reject('Dosya yazılırken bir hata oluştu.');
+                } else {
+                    resolve(`Dosya başarıyla kaydedildi: ${encryptedKeyFilePath}`);
+                }
+            });
+        }),
+        new Promise((resolve, reject) => {
+            fs.writeFileSync(filePath, base64Data, "utf8", (err) => {
+                if (err) {
+                    reject('Dosya yazılırken bir hata oluştu.');
+                } else {
+                    resolve(`Dosya başarıyla kaydedildi: ${filePath}`);
+                }
+            });
+        })
+    ]).then((results) => {
+        res.send(results);
+    }).catch((error) => {
+        res.status(500).send(error);
+    });
+    
+});
+
 
 // Dosya indirme ve deşifreleme endpoint'i
 app.get('/download/:filename', (req, res) => {
@@ -140,34 +158,33 @@ app.get('/download/:filename', (req, res) => {
     console.log('*****************************************' + filePath);
     const realFileName = path.basename(filePath);
 
-    const encryptedKeyFilePath = findFileInDirectory(dir, fileName.split('.')[0]+".txt");
+    let results = [];
+    
+    const encryptedKeyFilePath = findFileInDirectory(dir, fileName.split('.')[0]+".enc");
     const realEFilename = path.basename(encryptedKeyFilePath);
 
     const algorithm = realEFilename.split('-')[0];
 
     // Dosyayı oku
-    fs.readFile(filePath, (err, data) => {
-        if (err) {
-            res.status(500).send('Dosya okunurken bir hata oluştu.');
-            return;
-        }
+    const readData = fs.readFileSync(filePath, "utf8");
 
-        // Dosyayı rc4 ile şifrelenmiş anahtar ile deşifrele
-        
-        const encryptedKey = fs.readFileSync(encryptedKeyFilePath);
-        const decryptedKey = CryptoJS.RC4.decrypt(encryptedKey, secretKey).toString(CryptoJS.enc.Utf8);
+    console.log('base64string: ', readData);
+    
+    const encryptedKey = fs.readFileSync(encryptedKeyFilePath, "utf8");
+    const decryptedKey = CryptoJS.RC4.decrypt(encryptedKey, secretKey).toString(CryptoJS.enc.Utf8);
 
-        // Okuduğumuz dosyayı istemciye gönder
-        const File = {
-            name: fileName,
-            data: data,
-            key: decryptedKey,
-            algorithm: algorithm
-        };
-        
-        res.json(File);
+    console.log('encryptedKey: ', encryptedKey);
 
+    console.log('decryptedKey: ', decryptedKey);
+
+    results.push({
+        name: fileName,
+        data: readData,
+        key: decryptedKey,
+        algorithm: algorithm,
     });
+
+    res.json(results);
 
 });
 
@@ -184,7 +201,7 @@ const getFiles = (dir, parentPath = '') => {
 
         // Eğer bir klasörse, içindeki dosyaları da tarar
         if (stats.isDirectory()) {
-            results = results.concat(getFiles(filePath, path.join(parentPath, file)));
+            results = results.concat(getFiles(filePath, path.join(parentPath, file))); //
         } else {
             results.push({
                 name: file,
@@ -195,7 +212,9 @@ const getFiles = (dir, parentPath = '') => {
                 modifiedDate: stats.mtime
             });
         }
-    });
+    }); 
+
+    console.log('results: ', results);
     return results;
 };
 

@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import Dragdrop from './Dragdrop';
 
 
+
 const dsa = 5;
 
 // localhost:3000/list adresine get request atıp, dönen sonucu ekrana yazdırır.
@@ -23,9 +24,9 @@ interface FileData {
 interface DFileData {
     map(arg0: (name: any, index: any) => import("react/jsx-runtime").JSX.Element): unknown;
     name: string
-    data: Buffer
+    data: string
     key: string
-    algorithm: string
+    algorithm: string,
 }
 
 const Files = () => {
@@ -41,20 +42,9 @@ const Files = () => {
     const notify = () => toast("Dosya başarıyla yüklendi!");
     const warning = () => toast.warn("Lütfen bir şifreleme algoritması seçiniz.");
 
-    useEffect(() => {
-        console.log(selectedOption);
-    }), [selectedOption];
-
-    useEffect(() => {
-        console.log(fileContent);
-    } ), [fileContent];
-
     const handleSelectChange = (event) => {
         setSelectedOption(event.target.value);
     }
-
-
-
 
     const ModalClick = () => {
         document.getElementById("modal").classList.add('scale-100')
@@ -63,9 +53,6 @@ const Files = () => {
     const CloseModalClick = () => {
         document.getElementById("modal").classList.remove('scale-100')
     }
-
-
-
 
     function uint8ArrayToBase64(uint8Array) {
         // Uint8Array'i bir karakter dizisine dönüştür
@@ -79,47 +66,67 @@ const Files = () => {
         const response = await fetch('http://localhost:3000/list');
         const data = await response.text();
         setFolderContent(JSON.parse(data));
-        console.log("Dosyalar: "+ data);
     }
 
     const getData = async () => {
         const response = await fetch('http://localhost:3000/list');
         const data = await response.text();
         setData(JSON.parse(data));
-        console.log(data);
     }
 
     // listedeki dosyalardan birinin indirme butonuna tıklandığında çalışır
     const downloadFile = async (fileName, filePath) => {
         const response = await fetch('http://localhost:3000/download/' + fileName);
         const data = await response.text();
-        setDfile(JSON.parse(data));
-        console.log("RESPONSE: "+data);
 
-        useEffect(() => {
-            console.log(dfile);
-        } ), [dfile];
+        const fileDataParsed = JSON.parse(data) as DFileData;
+
+        let name = fileDataParsed[0].name;
+        let key = fileDataParsed[0].key;
+        let fileData = fileDataParsed[0].data;
+        let algorithm = fileDataParsed[0].algorithm;
+        let base64Data = fileDataParsed[0].base64Data;
+        var decrypted = '';
+
+        if (key == '') {
+            key = '12345678';
+        }
+        console.log("key: " + key);
+        console.log("fileData ", fileData.data.toString("base64"));
+        const string = String.fromCharCode.apply(null, fileData.data);
+
+
+        if (algorithm == 'DES') {
+
+            decrypted = CryptoJS.DES.decrypt(base64Data, key);
+            console.log("DES: " + decrypted); // 
+            
+        }
+
+        else if (algorithm == 'AES') {
+            decrypted = CryptoJS.AES.decrypt(fileData, key);
+            console.log("AES: " + decrypted.toString());
+        }
+
+        else if (algorithm == 'Blowfish') {
+            decrypted = CryptoJS.Blowfish.decrypt(fileData, key);
+            console.log("Blowfish: " + decrypted.toString());
+        }
+
+        else if (algorithm == 'RSA') {
+            decrypted = CryptoJS.AES.decrypt(fileData, key);
+            console.log("RSA: " + decrypted.toString());
+        }
+
+        else {
+            warning();
+        }
 
         // dosya indirme işlemi yapılacak
         // dosya indirilmeden önce algorimasına göre deşifreleme yapılacak
         // anahtar değeri alınacak
 
-
-
-        var key = dfile.key;
-        const fileData = dfile.data;
-
-        if (key == '') {
-            key = '12345678';
-        }
-
-        var algorithm = dfile.algorithm;
-
-        if (algorithm == 'DES') {
-
-            const decrypted = CryptoJS.DES.decrypt(fileData, key);
-            
-        }
+        //alınan data verisini base64'e çevir
 
 
     }
@@ -157,10 +164,12 @@ const Files = () => {
                 const base64Data = uint8ArrayToBase64(uint8Array);
 
                 const encrypted = CryptoJS.DES.encrypt(base64Data, key);
-
                 setFileContent(encrypted.toString());
 
                 console.log("base64Data: " + base64Data)
+                console.log("encrypted: " + encrypted.toString());
+
+                console.log("dencrypted: " + CryptoJS.DES.decrypt(encrypted, key).toString(CryptoJS.enc.Utf8));
 
                 axios.post('http://localhost:3000/upload', {
                     byteArray: encrypted.toString(),
@@ -204,6 +213,8 @@ const Files = () => {
                 const base64Data = uint8ArrayToBase64(uint8Array);
                 const encrypted = CryptoJS.Blowfish.encrypt(base64Data, key);
                 setFileContent(encrypted.toString());
+
+                console.log("base64Data: " + base64Data)
 
                 axios.post('http://localhost:3000/upload', {
                     byteArray: encrypted.toString(),

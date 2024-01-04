@@ -40,6 +40,8 @@ const Files = () => {
     const [selectedOption, setSelectedOption] = useState('');
 
     const notify = () => toast("Dosya başarıyla yüklendi!");
+    const notifyD = () => toast("Dosya başarıyla indirildi!");
+    const notifyDel = () => toast("Dosyalar başarıyla silindi!");
     const warning = () => toast.warn("Lütfen bir şifreleme algoritması seçiniz.");
 
     const handleSelectChange = (event) => {
@@ -74,6 +76,37 @@ const Files = () => {
         setData(JSON.parse(data));
     }
 
+    const base64toByteArray = (base64Data) => {
+        const raw = atob(base64Data);
+        const uint8Array = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; i++) {
+            uint8Array[i] = raw.charCodeAt(i);
+        }
+        return uint8Array;
+    }
+
+    const deleteFile = async (fileName) => {
+
+        // Eğer dosya uzantısı .enc ise asıl dosyayı da sil
+        const string = ["DES", "AES", "Blowfish", "RSA"];
+
+        if (fileName.slice(-4) == '.enc' && (fileName.startsWith(string[0]) || fileName.startsWith(string[1]) || fileName.startsWith(string[2]) || fileName.startsWith(string[3])) ) {
+            fileName = fileName.split("-")[1];
+            const response = await fetch('http://localhost:3000/delete/' + fileName);
+            const data = await response.text();
+            console.log(data);
+            deleteFile(fileName.slice(0, -4));
+            
+        }
+        else {
+
+            const response = await fetch('http://localhost:3000/delete/' + fileName);
+            const data = await response.text();
+            console.log(data);
+
+        }
+    }
+
     // listedeki dosyalardan birinin indirme butonuna tıklandığında çalışır
     const downloadFile = async (fileName, filePath) => {
         const response = await fetch('http://localhost:3000/download/' + fileName);
@@ -87,47 +120,82 @@ const Files = () => {
         let algorithm = fileDataParsed[0].algorithm;
         let base64Data = fileDataParsed[0].base64Data;
         var decrypted = '';
+        let byteArray;
 
         if (key == '') {
             key = '12345678';
         }
         console.log("key: " + key);
-        console.log("fileData ", fileData.data.toString("base64"));
-        const string = String.fromCharCode.apply(null, fileData.data);
+        console.log("fileData ", fileData);
+
+        
 
 
         if (algorithm == 'DES') {
 
-            decrypted = CryptoJS.DES.decrypt(base64Data, key);
+            decrypted = CryptoJS.DES.decrypt(fileData, key).toString(CryptoJS.enc.Utf8);
+            byteArray = base64toByteArray(decrypted);
             console.log("DES: " + decrypted); // 
+            console.log("byteArray: " , byteArray.toString());
+            const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = fileName.split("_")[1];
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
             
         }
 
         else if (algorithm == 'AES') {
-            decrypted = CryptoJS.AES.decrypt(fileData, key);
-            console.log("AES: " + decrypted.toString());
+            decrypted = CryptoJS.AES.decrypt(fileData, key).toString(CryptoJS.enc.Utf8);
+            console.log("AES: " + decrypted);
+            byteArray = base64toByteArray(decrypted);
+            console.log("byteArray: " , byteArray.toString());
+            const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = fileName.split("_")[1];
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
-
+ 
         else if (algorithm == 'Blowfish') {
-            decrypted = CryptoJS.Blowfish.decrypt(fileData, key);
+            decrypted = CryptoJS.Blowfish.decrypt(fileData, key).toString(CryptoJS.enc.Utf8);
             console.log("Blowfish: " + decrypted.toString());
+            byteArray = base64toByteArray(decrypted);
+            console.log("byteArray: " , byteArray.toString());
+            const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = fileName.split("_")[1];
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         else if (algorithm == 'RSA') {
-            decrypted = CryptoJS.AES.decrypt(fileData, key);
+            decrypted = CryptoJS.AES.decrypt(fileData, key).toString(CryptoJS.enc.Utf8);
             console.log("RSA: " + decrypted.toString());
+            byteArray = base64toByteArray(decrypted);
+            console.log("byteArray: " , byteArray.toString());
+            const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = fileName.split("_")[1];
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         else {
             warning();
         }
-
-        // dosya indirme işlemi yapılacak
-        // dosya indirilmeden önce algorimasına göre deşifreleme yapılacak
-        // anahtar değeri alınacak
-
-        //alınan data verisini base64'e çevir
-
 
     }
 
@@ -184,7 +252,6 @@ const Files = () => {
                 }).then(() => {
                     key = '';
                 }).then(() => {
-
                     document.getElementById("modal").classList.remove('scale-100')
                 })
             }
@@ -412,8 +479,10 @@ const Files = () => {
                                                             <img className="w-10 h-10 rounded-full" src="https://img.icons8.com/color/48/000000/kotlin.png" alt="Christy"/>
                                                         ) : fileExt == '.swift' ? (
                                                             <img className="w-10 h-10 rounded-full" src="https://img.icons8.com/color/48/000000/swift.png" alt="Christy"/>
-                                                        ) : fileExt == '.t' ? (
-                                                            <img className="w-10 h-10 rounded-full" src="https://img.icons8.com/color/48/000000/perl.png" alt="Christy"/>
+                                                        ) : fileExt == '.enc' ? (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="40" height="40" viewBox="0 0 50 50">
+                                                                <path d="M 30.398438 2 L 7 2 L 7 48 L 43 48 L 43 14.601563 Z M 30 15 L 30 4.398438 L 40.601563 15 Z"></path>
+                                                            </svg>
                                                         ) : fileExt == '.svg' ? (
                                                             <img className="w-10 h-10 rounded-full" src="https://img.icons8.com/color/48/000000/svg.png" alt="Christy"/>
                                                         ) : fileExt
@@ -438,22 +507,34 @@ const Files = () => {
                                                         fileDir == file.name ? (
                                                          <b className='mr-3'>SUNUCU DİZİNİ</b>
                                                         ) : (
-                                                            <><button
-                                                                    onClick={() => downloadFile(file.name, file.path)}
+                                                            <>
+
+                                                            {
+                                                                fileExt == '.enc' ? ("") :                                                             <button
+                                                                    onClick={() => downloadFile(file.name, file.path).then(() => {
+                                                                        notifyD();
+                                                                    })
+                                                                    }
                                                                     className='mr-3 rounded-full hover:bg-purple-200'
                                                                 ><svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                                                                         <path d="M14.707 7.793a1 1 0 0 0-1.414 0L11 10.086V1.5a1 1 0 0 0-2 0v8.586L6.707 7.793a1 1 0 1 0-1.414 1.414l4 4a1 1 0 0 0 1.416 0l4-4a1 1 0 0 0-.002-1.414Z" />
                                                                         <path d="M18 12h-2.55l-2.975 2.975a3.5 3.5 0 0 1-4.95 0L4.55 12H2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2Zm-3 5a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
                                                                     </svg>
-                                                                </button><button className='mr-3 rounded-full hover:bg-purple-200'>
-                                                                        <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
-                                                                            <path d="M17 4h-4V2a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2H1a1 1 0 0 0 0 2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1a1 1 0 1 0 0-2ZM7 2h4v2H7V2Zm1 14a1 1 0 1 1-2 0V8a1 1 0 0 1 2 0v8Zm4 0a1 1 0 0 1-2 0V8a1 1 0 0 1 2 0v8Z" />
-                                                                        </svg>
-                                                                    </button><button className='mr-3 rounded-full hover:bg-purple-200'>
-                                                                        <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 3">
-                                                                            <path d="M2 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm6.041 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM14 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z" />
-                                                                        </svg>
-                                                                    </button></>
+                                                            </button>
+
+                                                            }
+                                                            
+                                                            <button onClick={() => deleteFile(file.name).then(()=> {getData();notifyDel()} )} className='mr-3 rounded-full hover:bg-purple-200'>
+                                                                <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
+                                                                    <path d="M17 4h-4V2a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2H1a1 1 0 0 0 0 2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1a1 1 0 1 0 0-2ZM7 2h4v2H7V2Zm1 14a1 1 0 1 1-2 0V8a1 1 0 0 1 2 0v8Zm4 0a1 1 0 0 1-2 0V8a1 1 0 0 1 2 0v8Z" />
+                                                                </svg>
+                                                            </button>
+                                                            
+                                                            <button className='mr-3 rounded-full hover:bg-purple-200'>
+                                                                <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 3">
+                                                                    <path d="M2 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm6.041 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM14 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z" />
+                                                                </svg>
+                                                            </button></>
                                                         )
                                                     }
                                                 </div>

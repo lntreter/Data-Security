@@ -123,7 +123,7 @@ app.post('/upload', (req, res) => {
 
     Promise.all([
         new Promise((resolve, reject) => {
-            fs.writeFileSync(encryptedKeyFilePath, cipherText, (err) => {
+            fs.writeFile(encryptedKeyFilePath, cipherText, (err) => {
                 if (err) {
                     reject('Dosya yazılırken bir hata oluştu.');
                 } else {
@@ -132,11 +132,51 @@ app.post('/upload', (req, res) => {
             });
         }),
         new Promise((resolve, reject) => {
-            fs.writeFileSync(filePath, base64Data, "utf8", (err) => {
+            fs.writeFile(filePath, base64Data, "utf8", (err) => {
                 if (err) {
                     reject('Dosya yazılırken bir hata oluştu.');
                 } else {
                     resolve(`Dosya başarıyla kaydedildi: ${filePath}`);
+                }
+            });
+        })
+    ]).then((results) => {
+        res.send(results);
+    }).catch((error) => {
+        res.status(500).send(error);
+    });
+    
+});
+
+//dosya silme endpoint'i
+
+app.get('/delete/:filename', (req, res) => {
+
+    const dir = './';
+    const fileName = req.params.filename;
+    const filePath = findFileInDirectory(dir, fileName);
+    console.log('*****************************************' + filePath);
+
+    const encryptedKeyFilePath = findFileInDirectory(dir, fileName.split('.')[0]+".enc");
+
+    // Dosyayı sil
+
+    Promise.all([
+        new Promise((resolve, reject) => {
+            fs.unlink(filePath, (err) => {
+                if (err) {
+                    reject('Dosya silinirken bir hata oluştu.');
+                } else {
+                    resolve(`Dosya başarıyla silindi: ${filePath}`);
+                }
+            });
+        }),
+        new Promise((resolve, reject) => {
+            fs.unlink(encryptedKeyFilePath, (err) => {
+                if (err) {
+                    reject('Dosya silinirken bir hata oluştu.');
+                } else {
+                    resolve(`Dosya başarıyla silindi: ${encryptedKeyFilePath}`);
                 }
             });
         })
@@ -156,7 +196,6 @@ app.get('/download/:filename', (req, res) => {
     const fileName = req.params.filename;
     const filePath = findFileInDirectory(dir, fileName);
     console.log('*****************************************' + filePath);
-    const realFileName = path.basename(filePath);
 
     let results = [];
     

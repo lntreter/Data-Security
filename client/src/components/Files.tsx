@@ -31,7 +31,9 @@ interface DFileData {
 
 const Files = () => {
 
-    const [dfile, setDfile] = useState<DFileData | null> (null as any);
+    const [dirs , setDirs] = useState([] as any);
+
+    const [selectedFile, setSelectedFile] = useState("");
     
     const [data, setData] = useState<FileData | null> (null as any);
     const [fileContent, setFileContent] = useState('');
@@ -39,10 +41,23 @@ const Files = () => {
 
     const [selectedOption, setSelectedOption] = useState('');
 
+    useEffect(() => {
+        console.log(dirs);
+    }
+    , [dirs]);
+
+    useEffect(() => {
+        console.log(selectedFile);
+    }
+    , [selectedFile]);
+
     const notify = () => toast("Dosya başarıyla yüklendi!");
     const notifyD = () => toast("Dosya başarıyla indirildi!");
     const notifyDel = () => toast("Dosyalar başarıyla silindi!");
     const warning = () => toast.warn("Lütfen bir şifreleme algoritması seçiniz.");
+    const notifyDir = () => toast("Klasör başarıyla oluşturuldu!");
+    const notifyDirDel = () => toast("Klasör başarıyla silindi!");
+    const notifyDirChange = () => toast("Dosya başarıyla taşındı!");
 
     const handleSelectChange = (event) => {
         setSelectedOption(event.target.value);
@@ -52,8 +67,18 @@ const Files = () => {
         document.getElementById("modal").classList.add('scale-100')
     }
 
+    const modal1Click = (fileName) => {
+        setSelectedFile(fileName);
+        document.getElementById("modal1").classList.add('scale-100')
+
+    }
+
     const CloseModalClick = () => {
         document.getElementById("modal").classList.remove('scale-100')
+    }
+
+    const CloseModal1Click = () => {
+        document.getElementById("modal1").classList.remove('scale-100')
     }
 
     function uint8ArrayToBase64(uint8Array) {
@@ -62,6 +87,14 @@ const Files = () => {
     
         // Bu karakter dizisini Base64'e dönüştür
         return btoa(chars);
+    }
+
+    const changeDirectory = async (folderName, dirToChange) => {
+        axios.post('http://localhost:3000/changeDir', {
+            folderName: folderName,
+            dir: dirToChange
+        })
+        .then(response => console.log(response.data))
     }
 
     const getFolderData = async () => {
@@ -74,6 +107,7 @@ const Files = () => {
         const response = await fetch('http://localhost:3000/list');
         const data = await response.text();
         setData(JSON.parse(data));
+        getDirs();
     }
 
     const base64toByteArray = (base64Data) => {
@@ -83,6 +117,13 @@ const Files = () => {
             uint8Array[i] = raw.charCodeAt(i);
         }
         return uint8Array;
+    }
+
+    const getDirs = async () => {
+        const response = await fetch('http://localhost:3000/listDir');
+        const data = await response.text();
+        setDirs(JSON.parse(data));
+
     }
 
     const deleteFile = async (fileName) => {
@@ -350,6 +391,60 @@ const Files = () => {
                 </div>
             </div>
 
+            <div id="modal1"
+                className=" fixed top-0 left-0 min-w-screen h-screen w-screen flex items-center justify-center bg-gray-500 bg-opacity-50 transform scale-0 transition-transform duration-300">
+                
+                <div className="rounded-xl bg-gradient-to-bl from-blue-50 to-violet-50 flex items-center justify-center">
+                    <div className=" container mx-auto p-4">
+                        
+                        <div className="flex flex-col w-96 rounded-md bg-white bg-clip-border text-gray-700 shadow-md">
+                            
+                            <div className="mt-3 ml-3">
+                                <button onClick={CloseModal1Click} className='mr-3 rounded-full hover:bg-purple-200'>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 14 14" id="cross"><path fill="#000" fill-rule="evenodd" d="M13 7C13 10.3137 10.3137 13 7 13C3.68629 13 1 10.3137 1 7C1 3.68629 3.68629 1 7 1C10.3137 1 13 3.68629 13 7ZM9.26274 4.73725C9.53611 5.01062 9.53611 5.45384 9.26274 5.7272L7.98995 7L9.26274 8.27279C9.53611 8.54615 9.53611 8.98937 9.26274 9.26274C8.98937 9.5361 8.54616 9.5361 8.27279 9.26274L7 7.98994L5.72721 9.26274C5.45384 9.5361 5.01063 9.5361 4.73726 9.26274C4.46389 8.98937 4.46389 8.54615 4.73726 8.27279L6.01005 7L4.73726 5.7272C4.46389 5.45384 4.46389 5.01062 4.73726 4.73725C5.01063 4.46389 5.45384 4.46389 5.72721 4.73725L7 6.01005L8.27279 4.73725C8.54616 4.46389 8.98937 4.46389 9.26274 4.73725Z" clip-rule="evenodd"></path></svg>
+                                </button>
+                            </div>
+
+                            <div className="flex flex-col justify-center mt-4">
+                                
+                                <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                                    <ul className="divide-y divide-gray-200">
+                                        <li className="p-3 justify-between items-center user-card">
+                                            <h1 className='ml-3 mb-2'><b>DOSYAYI TAŞIMAK İSTEDİĞİNİZ KLASÖRE TIKLAYIN</b></h1>
+                                            {
+                                                dirs ? (
+                                                    dirs.map((dir, index) => {
+                                                        return(<li className="p-3 flex justify-between items-center user-card">
+                                                            <div className="flex items-center">
+                                                                <img className="w-10 h-10 rounded-full" src="https://img.icons8.com/color/48/000000/folder-invoices.png" alt="Christy"/>
+                                                                <div className="ml-3">
+                                                                    <p className="text-gray-700 dark:text-white">{dir}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <button onClick={()=> changeDirectory(selectedFile, dir).then(()=>{CloseModal1Click();notifyDirChange()})} className='mr-3 rounded-full hover:bg-indigo-200'>
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="35" height="35" viewBox="0 0 24 24">
+                                                                        <path d="M 19.28125 5.28125 L 9 15.5625 L 4.71875 11.28125 L 3.28125 12.71875 L 8.28125 17.71875 L 9 18.40625 L 9.71875 17.71875 L 20.71875 6.71875 Z"></path>
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+                                                        </li>)
+                                                        
+    
+                                                    })
+                                                ) : (
+                                                    <p>klasör yok</p>
+                                                )
+                                            }
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
 
             <link rel="stylesheet" href="https://unpkg.com/flowbite@1.4.4/dist/flowbite.min.css" />
 
@@ -429,6 +524,8 @@ const Files = () => {
                                                         //dosya uzantısına göre icon ekleme
                                                         fileExt == '.pdf' ? (
                                                             <img className="w-10 h-10 rounded-full" src="https://img.icons8.com/color/48/000000/pdf-2.png" alt="Christy"/>
+                                                        ) : fileExt == '' ? (
+                                                            <img className="w-10 h-10 rounded-full" src="https://img.icons8.com/color/48/000000/file.png" alt="Christy"/>
                                                         ) : fileExt == '.docx' ? (
                                                             <img className="w-10 h-10 rounded-full" src="https://img.icons8.com/color/48/000000/ms-word.png" alt="Christy"/>
                                                         ) : fileExt == '.txt' ? (
@@ -530,7 +627,7 @@ const Files = () => {
                                                                 </svg>
                                                             </button>
                                                             
-                                                            <button className='mr-3 rounded-full hover:bg-purple-200'>
+                                                            <button onClick={()=> modal1Click(file.name)} className='mr-3 rounded-full hover:bg-purple-200'>
                                                                 <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 3">
                                                                     <path d="M2 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm6.041 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM14 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z" />
                                                                 </svg>

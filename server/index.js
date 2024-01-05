@@ -3,9 +3,11 @@ const multer = require('multer');
 const crypto = require('crypto');
 const CryptoJS = require("crypto-js");
 const fs = require('fs');
+const fsPromises = require('fs').promises;
 const path = require('path');
 const cors = require('cors');
 const util = require('util');
+const { count } = require('console');
 const readdir = util.promisify(fs.readdir);
 const stat = util.promisify(fs.stat);
 
@@ -86,6 +88,58 @@ function findFileInDirectory(dir, partialFileName) {
     return null;
 }
 
+const readDirDir = async (dir, dirs) => {
+    let files;
+    try {
+        files = await fsPromises.readdir(dir);
+    } catch (err) {
+        console.error('Dizin okunurken hata oluştu:', err);
+        return;
+    }
+
+    for (let file of files) {
+        if (file.startsWith('node_modules')) {
+            continue;
+        }
+        let fullPath = path.join(dir, file);
+        let stats;
+        try {
+            stats = await fsPromises.stat(fullPath);
+        } catch (err) {
+            console.error('Dosya bilgisi alınırken hata oluştu:', err);
+            continue;
+        }
+        if (stats.isDirectory()) {
+            console.log('Klasör bulundu: ', file);
+            dirs.push(fullPath);
+            await readDirDir(fullPath, dirs);
+        }
+    }
+};
+
+
+// belli bir dizindeki dizinleri listeleme endpoint'i
+
+app.get('/listDir', async (req, res) => {
+    try {
+        const dir = "./";
+        //dizindeki klasörleri bul
+
+        let dirs = [];
+
+        await readDirDir(dir, dirs);
+
+        console.log('Klasördeki Klasörler:', dirs);
+
+        res.json(dirs);
+
+
+    } catch (err) {
+        console.error('Dosya Listeleme Hatası:', err);
+    }
+});
+
+
 app.post('/upload', (req, res) => {
 
 
@@ -147,6 +201,40 @@ app.post('/upload', (req, res) => {
     });
     
 });
+
+//dosya dizini değiştirme endpoint'i
+
+app.post('/changeDir', (req, res) => {
+    
+    const dir = req.body.dir;
+    console.log('dir: ', dir);
+    const fileName = req.body.folderName;
+    const filePath = findFileInDirectory("./", fileName);
+    console.log('*****************************************' + filePath);
+
+    //Bulunan dosyayı istenilen dizine taşı
+    const newFilePath = path.join(__dirname, dir, fileName);
+    console.log( newFilePath);
+
+    Promise.all([
+        new Promise((resolve, reject) => {
+            fs.rename(filePath, newFilePath, (err) => {
+                if (err) {
+                    reject('Dosya taşınırken bir hata oluştu.');
+                } else {
+                    resolve(`Dosya başarıyla taşındı: ${newFilePath}`);
+                }
+            });
+        })
+    ]).then((results) => {
+        res.send(results);
+    }).catch((error) => {
+        res.status(500).send(error);
+    });
+
+});
+
+
 
 //dosya silme endpoint'i
 

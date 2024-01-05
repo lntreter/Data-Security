@@ -70,7 +70,22 @@ const Files = () => {
     const modal1Click = (fileName) => {
         setSelectedFile(fileName);
         document.getElementById("modal1").classList.add('scale-100')
+    }
 
+    const modal2Click = () => {
+        document.getElementById("modal2").classList.add('scale-100')
+    }
+
+    const modal3Click = () => {
+        document.getElementById("modal3").classList.add('scale-100')
+    }
+
+    const CloseModa2lClick = () => {
+        document.getElementById("modal2").classList.remove('scale-100')
+    }
+
+    const CloseModa3lClick = () => {
+        document.getElementById("modal3").classList.remove('scale-100')
     }
 
     const CloseModalClick = () => {
@@ -87,6 +102,20 @@ const Files = () => {
     
         // Bu karakter dizisini Base64'e dönüştür
         return btoa(chars);
+    }
+
+    const dltDir = async (dir) => {
+        axios.post('http://localhost:3000/deleteDir', {
+            dir: dir
+        })
+        .then(response => console.log(response.data))
+    }
+
+    const crtDir = async (dir) => {
+        axios.post('http://localhost:3000/createDir', {
+            dir: dir
+        })
+        .then(response => console.log(response.data))
     }
 
     const changeDirectory = async (folderName, dirToChange) => {
@@ -182,7 +211,7 @@ const Files = () => {
             const downloadUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.download = fileName.split("_")[1];
+            link.download = fileName.split("ncrypted_")[1];
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -198,7 +227,7 @@ const Files = () => {
             const downloadUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.download = fileName.split("_")[1];
+            link.download = fileName.split("ncrypted_")[1];
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -213,7 +242,7 @@ const Files = () => {
             const downloadUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.download = fileName.split("_")[1];
+            link.download = fileName.split("ncrypted_")[1];
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -228,7 +257,7 @@ const Files = () => {
             const downloadUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.download = fileName.split("_")[1];
+            link.download = fileName.split("ncrypted_")[1];
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -445,6 +474,89 @@ const Files = () => {
                 </div>
             </div>
 
+            <div id="modal2"
+                className=" fixed top-0 left-0 min-w-screen h-screen w-screen flex items-center justify-center bg-gray-500 bg-opacity-50 transform scale-0 transition-transform duration-300">
+                
+                <div className="rounded-xl bg-gradient-to-bl from-blue-50 to-violet-50 flex items-center justify-center">
+                    <div className=" container mx-auto p-4">
+                        
+                        <div className="flex flex-col w-96 rounded-md bg-white bg-clip-border text-gray-700 shadow-md">
+                            
+                            <div className="mt-3 ml-3">
+                                <button onClick={CloseModa2lClick} className='mr-3 rounded-full hover:bg-purple-200'>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 14 14" id="cross"><path fill="#000" fill-rule="evenodd" d="M13 7C13 10.3137 10.3137 13 7 13C3.68629 13 1 10.3137 1 7C1 3.68629 3.68629 1 7 1C10.3137 1 13 3.68629 13 7ZM9.26274 4.73725C9.53611 5.01062 9.53611 5.45384 9.26274 5.7272L7.98995 7L9.26274 8.27279C9.53611 8.54615 9.53611 8.98937 9.26274 9.26274C8.98937 9.5361 8.54616 9.5361 8.27279 9.26274L7 7.98994L5.72721 9.26274C5.45384 9.5361 5.01063 9.5361 4.73726 9.26274C4.46389 8.98937 4.46389 8.54615 4.73726 8.27279L6.01005 7L4.73726 5.7272C4.46389 5.45384 4.46389 5.01062 4.73726 4.73725C5.01063 4.46389 5.45384 4.46389 5.72721 4.73725L7 6.01005L8.27279 4.73725C8.54616 4.46389 8.98937 4.46389 9.26274 4.73725Z" clip-rule="evenodd"></path></svg>
+                                </button>
+                            </div>
+
+                            <div className="flex flex-col justify-center mt-4">
+                                
+                                <input type="text" id="crtDir" className="mt-3 mr-4 ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Klasör Adı (dizin\dizin)" required/>
+
+                                <button onClick={()=>crtDir((document.getElementById("crtDir") as HTMLInputElement).value).then(()=>{CloseModa2lClick();notifyDir();getDirs();})} className="ml-4 w-11/12 text-gray-600 mb-3 mt-2 middle none center rounded-lg bg-gradient-to-tr to-slate-200 from-blue-500 via-indigo-700 py-3 px-5 font-sans text-xs font-bold uppercase shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:shadow-blue-500/40 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">
+                                    Klasör Oluştur
+                                </button>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="modal3"
+                className=" fixed top-0 left-0 min-w-screen h-screen w-screen flex items-center justify-center bg-gray-500 bg-opacity-50 transform scale-0 transition-transform duration-300">
+                
+                <div className="rounded-xl bg-gradient-to-bl from-blue-50 to-violet-50 flex items-center justify-center">
+                    <div className=" container mx-auto p-4">
+                        
+                        <div className="flex flex-col w-96 rounded-md bg-white bg-clip-border text-gray-700 shadow-md">
+                            
+                            <div className="mt-3 ml-3">
+                                <button onClick={CloseModa3lClick} className='mr-3 rounded-full hover:bg-purple-200'>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 14 14" id="cross"><path fill="#000" fill-rule="evenodd" d="M13 7C13 10.3137 10.3137 13 7 13C3.68629 13 1 10.3137 1 7C1 3.68629 3.68629 1 7 1C10.3137 1 13 3.68629 13 7ZM9.26274 4.73725C9.53611 5.01062 9.53611 5.45384 9.26274 5.7272L7.98995 7L9.26274 8.27279C9.53611 8.54615 9.53611 8.98937 9.26274 9.26274C8.98937 9.5361 8.54616 9.5361 8.27279 9.26274L7 7.98994L5.72721 9.26274C5.45384 9.5361 5.01063 9.5361 4.73726 9.26274C4.46389 8.98937 4.46389 8.54615 4.73726 8.27279L6.01005 7L4.73726 5.7272C4.46389 5.45384 4.46389 5.01062 4.73726 4.73725C5.01063 4.46389 5.45384 4.46389 5.72721 4.73725L7 6.01005L8.27279 4.73725C8.54616 4.46389 8.98937 4.46389 9.26274 4.73725Z" clip-rule="evenodd"></path></svg>
+                                </button>
+                            </div>
+
+                            <div className="flex flex-col justify-center mt-4">
+                                
+                            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                                    <ul className="divide-y divide-gray-200">
+                                        <li className="p-3 justify-between items-center user-card">
+                                            <h1 className='ml-3 mb-2'><b>SİLMEK İSTEDİĞİNİZ KLASÖRÜ SEÇİN</b></h1>
+                                            {
+                                                dirs ? (
+                                                    dirs.map((dir, index) => {
+                                                        return(<li className="p-3 flex justify-between items-center user-card">
+                                                            <div className="flex items-center">
+                                                                <img className="w-10 h-10 rounded-full" src="https://img.icons8.com/color/48/000000/folder-invoices.png" alt="Christy"/>
+                                                                <div className="ml-3">
+                                                                    <p className="text-gray-700 dark:text-white">{dir}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <button onClick={()=> dltDir(dir).then(()=>{CloseModa3lClick();notifyDirDel();getDirs();})} className='mr-3 rounded-full hover:bg-indigo-200'>
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="35" height="35" viewBox="0 0 50 50">
+                                                                        <path d="M 9.15625 6.3125 L 6.3125 9.15625 L 22.15625 25 L 6.21875 40.96875 L 9.03125 43.78125 L 25 27.84375 L 40.9375 43.78125 L 43.78125 40.9375 L 27.84375 25 L 43.6875 9.15625 L 40.84375 6.3125 L 25 22.15625 Z"></path>
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+                                                        </li>)
+                                                        
+    
+                                                    })
+                                                ) : (
+                                                    <p>Klasör Yok</p>
+                                                )
+                                            }
+                                        </li>
+                                    </ul>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
 
             <link rel="stylesheet" href="https://unpkg.com/flowbite@1.4.4/dist/flowbite.min.css" />
 
@@ -473,7 +585,8 @@ const Files = () => {
                                         }
 
                                     </button>
-                                    <button     
+                                    <button 
+                                        onClick={getDirs}    
                                         data-ripple-light="true"
                                         data-popover-target="popover2"
                                         className="mr-1 middle none center rounded-lg bg-gradient-to-tr to-slate-200 from-blue-500 via-indigo-700 py-3 px-3 font-sans text-xs font-bold uppercase text-white shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:shadow-blue-500/40 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
@@ -498,12 +611,12 @@ const Files = () => {
                                                 Dosya Yükle
                                             </button>
 
-                                            <button className="flex mt-3 first-letter:flex text-gray-600 middle none center rounded-lg bg-gradient-to-tr to-slate-200 from-blue-500 via-indigo-700 py-3 px-3 font-sans text-xs font-bold uppercase shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:shadow-blue-500/40 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">
+                                            <button onClick={modal2Click} className="flex mt-3 first-letter:flex text-gray-600 middle none center rounded-lg bg-gradient-to-tr to-slate-200 from-blue-500 via-indigo-700 py-3 px-3 font-sans text-xs font-bold uppercase shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:shadow-blue-500/40 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">
                                                 <svg className='mr-2' xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" id="add-folder"><g data-name="Layer 2"><path d="M19.5 7.05h-7L9.87 3.87a1 1 0 0 0-.77-.37H4.5A2.47 2.47 0 0 0 2 5.93v12.14a2.47 2.47 0 0 0 2.5 2.43h15a2.47 2.47 0 0 0 2.5-2.43V9.48a2.47 2.47 0 0 0-2.5-2.43zM14 15h-1v1a1 1 0 0 1-2 0v-1h-1a1 1 0 0 1 0-2h1v-1a1 1 0 0 1 2 0v1h1a1 1 0 0 1 0 2z" data-name="folder-add"></path></g></svg>
                                                 Klasör Oluştur
                                             </button>
 
-                                            <button className="flex text-gray-600 mt-3 middle none center rounded-lg bg-gradient-to-tr to-slate-200 from-blue-500 via-indigo-700 py-3 px-3 font-sans text-xs font-bold uppercase shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:shadow-blue-500/40 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">
+                                            <button onClick={modal3Click} className="flex text-gray-600 mt-3 middle none center rounded-lg bg-gradient-to-tr to-slate-200 from-blue-500 via-indigo-700 py-3 px-3 font-sans text-xs font-bold uppercase shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:shadow-blue-500/40 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">
                                                 <svg className='mr-2' xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" id="delete-folder"><path d="m19,6.25h-5.424c-.252,0-.495-.075-.703-.216l-1.922-1.308c-.458-.312-.993-.476-1.546-.476h-4.404c-1.517,0-2.75,1.233-2.75,2.75v10c0,1.517,1.233,2.75,2.75,2.75h14c1.517,0,2.75-1.233,2.75-2.75v-8c0-1.517-1.233-2.75-2.75-2.75Zm-5,7.5h-4c-.414,0-.75-.336-.75-.75s.336-.75.75-.75h4c.414,0,.75.336.75.75s-.336.75-.75.75Z"></path></svg>
                                                 KLASÖR SİL
                                             </button>

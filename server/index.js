@@ -315,6 +315,7 @@ app.get('/download/:filename', (req, res) => {
 
 });
 
+
 const getFiles = (dir, parentPath = '') => {
     let results = [];
     fs.readdirSync(dir).forEach(file => {
@@ -344,6 +345,45 @@ const getFiles = (dir, parentPath = '') => {
     console.log('results: ', results);
     return results;
 };
+
+//klasör silme endpoint'i
+
+app.post('/deleteDir', (req, res) => {
+    
+    const dir = req.body.dir;
+    //gelen isimde klasör sil
+    const folderPath = path.join(__dirname, "./", dir);
+    fs.rmdir(folderPath, (err) => {
+        if (err) {
+            res.status(500).send('Klasör silinirken bir hata oluştu.');
+            return;
+        }
+        res.send(`Klasör başarıyla silindi: ${folderPath}`);
+    });
+});
+
+
+//klasör oluşturma endpoint'i
+
+
+
+app.post('/createDir', (req, res) => {
+
+    const dir = req.body.dir;
+    //gelen isimde klasör oluştur
+    const folderPath = path.join(__dirname, "./", dir);
+
+    console.log('folderPath: ', folderPath);
+    fs.mkdir(folderPath, (err) => {
+        if (err) {
+            res.status(500).send('Klasör oluşturulurken bir hata oluştu.');
+            return;
+        }
+        res.send(`Klasör başarıyla oluşturuldu: ${folderPath}`);
+    });
+});
+
+
 
 app.get('/list', (req, res) => {
     const dir = './'; // Örnek olarak mevcut dizini kullanıyoruz

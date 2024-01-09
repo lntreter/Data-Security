@@ -15,7 +15,6 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 //rc4 için şifreleme anahtarını oluştur crtpyo-js ile
-const secretKey = crypto.randomBytes(16).toString('hex');
 
 // Dosya yükleme ve şifreleme endpoint'i
 
@@ -139,10 +138,14 @@ app.get('/listDir', async (req, res) => {
     }
 });
 
+let secretKey;
 
 app.post('/upload', (req, res) => {
 
 
+    const secretKeyy = crypto.randomBytes(16).toString('hex');
+
+    secretKey = req.body.rc4;
     const base64Data = req.body.byteArray;
     console.log('base64Data: ', base64Data);
     console.log('fileName: ', req.body.fileName);
@@ -167,6 +170,7 @@ app.post('/upload', (req, res) => {
 
     console.log('key: ', req.body.key);
     console.log('secretKey: ', secretKey);
+    console.log('secretKeyy: ', secretKeyy);
 
     if (!fs.existsSync('./encryptkeys')) {
         fs.mkdirSync('./encryptkeys');

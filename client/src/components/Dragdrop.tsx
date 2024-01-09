@@ -1,76 +1,6 @@
-// import React from 'react';
-
-// const Dragdrop = () => {
-
-//     const dropzone = document.getElementById('dropzone');
-//     const fileInput = document.getElementById('fileInput');
-//     const fileList = document.getElementById('fileList');
-
-//     dropzone.addEventListener('dragover', (e) => {e.preventDefault();
-//         dropzone.classList.add('border-blue-500', 'border-2');
-//     });
-
-//     dropzone.addEventListener('dragleave', () => {dropzone.classList.remove('border-blue-500', 'border-2');});
-
-//     dropzone.addEventListener('drop', (e) => {e.preventDefault();
-//         dropzone.classList.remove('border-blue-500', 'border-2');
-
-//         const files = e.dataTransfer.files;
-//         handleFiles(files);
-//     });
-
-//     fileInput.addEventListener('change', (e) => { 
-//         const files = (e.target as HTMLInputElement).files;
-//         handleFiles(files);
-//     });
-
-//     function handleFiles(files) {fileList.innerHTML = '';
-
-//         for (const file of files) { 
-//             const listItem = document.createElement('div');
-//             listItem.textContent = `${file.name} (${formatBytes(file.size)})`;
-//             fileList.appendChild(listItem);
-//         }
-//     }
-
-//     function formatBytes(bytes) { 
-//         if (bytes === 0) return '0 Bytes';
-
-//         const k = 1024;
-//         const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-//         const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-//         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-//     }
-
-//     return (
-//         <><div className="bg-gray-100 h-screen flex items-center justify-center p-3">
-//             <div className="w-full max-w-md p-9 bg-white rounded-lg shadow-lg">
-//                 <h1 className="text-center text-2xl sm:text-2xl font-semibold mb-4 text-gray-800">File Drop and Upload</h1>
-//                 <div className="bg-gray-100 p-8 text-center rounded-lg border-dashed border-2 border-gray-300 hover:border-blue-500 transition duration-300 ease-in-out transform hover:scale-105 hover:shadow-md" id="dropzone">
-//                     <label htmlFor="fileInput" className="cursor-pointer flex flex-col items-center space-y-2">
-//                         <svg className="w-16 h-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-//                         </svg>
-//                         <span className="text-gray-600">Drag and drop your files here</span>
-//                         <span className="text-gray-500 text-sm">(or click to select)</span>
-//                     </label>
-//                     <input type="file" id="fileInput" className="hidden" multiple />
-//                 </div>
-//                 <div className="mt-6 text-center" id="fileList"></div>
-//             </div>
-//         </div>
-//         </>
-//     );
-
-// }
-
-// export default Dragdrop;
-
-
 import React, {useRef, useState, useEffect, useCallback } from 'react';
 
-const Dragdrop = ({ handleFileRead }: { handleFileRead: (event: any) => Promise<void> }) => {
+const Dragdrop = ({ handleFileRead, rc4 }: { handleFileRead: (event: any) => Promise<void> , rc4:any}) => {
     const [dragOver, setDragOver] = useState(false);
     const [fileList, setFileList] = useState([]);
     const fileInputRef = useRef(null);
@@ -221,9 +151,15 @@ const Dragdrop = ({ handleFileRead }: { handleFileRead: (event: any) => Promise<
                     </li>
                 ))}
             </ul>
-            <button onClick={handleFileReadButton} className="ml-4 w-11/12 text-gray-600 mb-3 mt-2 middle none center rounded-lg bg-gradient-to-tr to-slate-200 from-blue-500 via-indigo-700 py-3 px-5 font-sans text-xs font-bold uppercase shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:shadow-blue-500/40 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">
+            {
+                rc4 ? (
+                    <button onClick={handleFileReadButton} className="ml-4 w-11/12 text-gray-600 mb-3 mt-2 middle none center rounded-lg bg-gradient-to-tr to-slate-200 from-blue-500 via-indigo-700 py-3 px-5 font-sans text-xs font-bold uppercase shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:shadow-blue-500/40 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">
+                    Yükle
+                </button>
+                ) : (<button disabled={true} onClick={handleFileReadButton} className="ml-4 w-11/12 text-gray-600 mb-3 mt-2 middle none center rounded-lg bg-gradient-to-tr to-slate-200 from-blue-500 via-indigo-700 py-3 px-5 font-sans text-xs font-bold uppercase shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:shadow-blue-500/40 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">
                 Yükle
-            </button>
+            </button>)
+            }
         </div>
     );
 };

@@ -7,6 +7,7 @@ import Dragdrop from './Dragdrop';
 
 
 
+
 const dsa = 5;
 
 // localhost:3000/list adresine get request atıp, dönen sonucu ekrana yazdırır.
@@ -38,6 +39,7 @@ const Files = () => {
     const [data, setData] = useState<FileData | null> (null as any);
     const [fileContent, setFileContent] = useState('');
     const [folderContent, setFolderContent] = useState('');
+    const [DDrc4, setDDrc4] = useState('' as any);
 
     const [selectedOption, setSelectedOption] = useState('');
 
@@ -269,6 +271,9 @@ const Files = () => {
 
     }
 
+    const setInputRC4 = () => {
+        setDDrc4((document.getElementById("RS4") as HTMLInputElement).value);
+    }
 
     const handleFileRead = async (event) => {
 
@@ -313,14 +318,15 @@ const Files = () => {
                     byteArray: encrypted.toString(),
                     fileName: fileName,
                     key: key,
-                    algorithm: selectedOption
-
+                    algorithm: selectedOption,
+                    rc4: (document.getElementById("RS4") as HTMLInputElement).value
                 })
                 .then(response => console.log(response.data))
                 .catch(error => console.error(error)).then(() => {
                     notify();
                 }).then(() => {
-                    key = '';
+                    (document.getElementById("first_name") as HTMLInputElement).value = '';
+                    (document.getElementById("RS4") as HTMLInputElement).value = '';
                 }).then(() => {
                     document.getElementById("modal").classList.remove('scale-100')
                 })
@@ -335,15 +341,19 @@ const Files = () => {
                     byteArray: encrypted.toString(),
                     fileName: fileName,
                     key: key,
-                    algorithm: selectedOption
+                    algorithm: selectedOption,
+                    rc4: (document.getElementById("RS4") as HTMLInputElement).value
 
                 })
                 .then(response => console.log(response.data))
                 .catch(error => console.error(error)).then(() => {
                     notify();
                 }).then(() => {
-                    key = '';
-                });
+                    (document.getElementById("first_name") as HTMLInputElement).value = '';
+                    (document.getElementById("RS4") as HTMLInputElement).value = '';
+                }).then(() => {
+                    document.getElementById("modal").classList.remove('scale-100')
+                })
 
             }
             else if (selectedOption == 'Blowfish') {
@@ -357,19 +367,19 @@ const Files = () => {
                     byteArray: encrypted.toString(),
                     fileName: fileName,
                     key: key,
-                    algorithm: selectedOption
+                    algorithm: selectedOption,
+                    rc4: (document.getElementById("RS4") as HTMLInputElement).value
 
                 })
                 .then(response => console.log(response.data))
                 .catch(error => console.error(error)).then(() => {
                     notify();
                 }).then(() => {
-                    key = '';
-                });
-            }
-            else if (selectedOption == 'RSA') {
-                const encrypted = CryptoJS.AES.encrypt(uint8Array.toString(), key);
-                setFileContent(encrypted.toString());
+                    (document.getElementById("first_name") as HTMLInputElement).value = '';
+                    (document.getElementById("RS4") as HTMLInputElement).value = '';
+                }).then(() => {
+                    document.getElementById("modal").classList.remove('scale-100')
+                })
             }
             else {
                 warning();
@@ -406,14 +416,15 @@ const Files = () => {
                                 <select value={selectedOption} onChange={handleSelectChange} id="encrypt" className="mr-4 ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
                                     
                                     <option value="">Şifreleme Algoritması Seçiniz</option>
-                                    <option id='opt1' value="RSA">RSA</option>
                                     <option id='opt2' value="DES">DES</option>
                                     <option id='opt3' value="AES">AES</option>
                                     <option id='opt4' value="Blowfish">Blowfish</option>
                                 </select>
                                         
                                 <input type="text" id="first_name" className="mt-3 mr-4 ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Anahtar Değeri" required/>
-                                <Dragdrop handleFileRead={handleFileRead}/>
+                                <input onChange={setInputRC4} type="text" id="RS4" className="mt-3 mr-4 ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="RC4 Anahtar Değeri" required/>
+                                
+                                <Dragdrop handleFileRead={handleFileRead} rc4={DDrc4} />
                             </div> 
                         </div>
                     </div>
@@ -561,8 +572,8 @@ const Files = () => {
             <link rel="stylesheet" href="https://unpkg.com/flowbite@1.4.4/dist/flowbite.min.css" />
 
 
-            <div className="">
-                <div className=" max-w-4xl my-10">
+            <div className="flex flex-row">
+                <div className=" w-3/5 my-10">
                     <div className="bg-white shadow-lg rounded-lg overflow-hidden">
                         <ul className="divide-y divide-gray-200">
                             <li className="p-3 flex justify-between items-center user-card"> <h1><b>DOSYALAR</b> - Sunucu dizini</h1>
@@ -758,7 +769,33 @@ const Files = () => {
                         </ul>
                     </div>
                 </div>
+
+                <div className="ml-auto mr-auto mt-auto mb-auto bg-white shadow-lg rounded-lg p-6 space-y-4">
+                    <div className="flex flex-col bg-white p-4">
+                        <span className=" text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-tr from-blue-500 via-indigo-700 to-slate-200">
+                            DATA
+                        </span>
+                        <span className=" text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-tr from-blue-500 via-indigo-700 to-slate-200">
+                            SECURITY
+                        </span>
+                    </div>
+
+
+                    <div className="flex flex-col bg-white p-4">
+                        <span className=" text-3xl  text-transparent bg-clip-text bg-gradient-to-tr from-blue-500 via-indigo-700 to-slate-200">
+                            BURHAN ŞAHİN
+                        </span>
+                        <span className=" text-3xl  text-transparent bg-clip-text bg-gradient-to-tr from-blue-500 via-indigo-700 to-slate-200">
+                            TALHA YAY
+                        </span>
+                    </div>
+
+
+
+                </div>
             </div>
+
+            
 
             <script type="module" src="https://unpkg.com/@material-tailwind/html@latest/scripts/popover.js"></script>
             <script src="https://unpkg.com/flowbite@1.4.0/dist/flowbite.js"></script>
